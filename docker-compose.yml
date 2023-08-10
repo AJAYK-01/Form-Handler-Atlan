@@ -1,0 +1,22 @@
+version: '3.8'
+services:
+  database:
+    image: postgres:15.3-alpine3.18
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: atlan
+      POSTGRES_DB: database
+    volumes:
+      - /workspaces/atlan-backend-intern-task/Database_Data:/var/lib/postgresql/data
+
+  db_handler:
+    build:
+      context: ./Database_Handler
+    environment:
+      FLASK_APP: main.py
+      FLASK_ENV: development
+      DATABASE_URL: postgresql://postgres:atlan@database/database
+    ports:
+      - "5000:8080"
+    depends_on:
+      - database
