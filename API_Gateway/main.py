@@ -1,5 +1,6 @@
 from flask import Flask, request
 import requests
+import os
 
 app = Flask(__name__)
 
@@ -25,6 +26,8 @@ def submit_form():
         f'{ADD_TO_DB_URL}/submit-response', json=data, timeout=60)
     if add_to_db_response.status_code != 200:
         return add_to_db_response.text, add_to_db_response.status_code
+    else:
+        return add_to_db_response.text
 
     # # Export form data to Google Sheets
     # export_to_sheets_response = requests.post(
@@ -35,8 +38,8 @@ def submit_form():
     # # Log successful form submission
     # log_data = {'message': 'Form submitted successfully'}
     # requests.post(LOGGING_URL, json=log_data, timeout=60)
-    return 'Form submitted successfully', 200
+    # return 'Form submitted successfully', 200
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8080)
+    app.run(host='0.0.0.0', port=8080, debug=(os.environ.get('DEBUG')))

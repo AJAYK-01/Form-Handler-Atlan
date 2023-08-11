@@ -63,8 +63,8 @@ def submit_response():
 
     db.session.commit()
 
-    return jsonify(message='Response submitted successfully')
+    return jsonify(message='Response submit successfully')
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8080)
+    app.run(host='0.0.0.0', port=8080, debug=(os.environ.get('DEBUG')))

@@ -5,6 +5,13 @@ services:
       context: ./API_Gateway
     env_file:
       - ./API_Gateway/.env
+    x-develop:
+      watch:
+        - action: sync
+          path: ./API_Gateway/main.py
+          target: /app/main.py
+        - action: rebuild
+          path: ./API_Gateway/requirements.txt
     ports:
       - "5000:8080"
 
@@ -22,5 +29,12 @@ services:
       context: ./Database_Handler
     env_file:
       - ./Database_Handler/.env
+    x-develop:
+      watch:
+        - action: sync
+          path: ./Database_Handler/main.py
+          target: /app/main.py
+        - action: rebuild
+          path: ./Database_Handler/requirements.txt
     depends_on:
       - database
