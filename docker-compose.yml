@@ -5,6 +5,7 @@ services:
       context: ./API_Gateway
     env_file:
       - ./API_Gateway/.env
+      - services_urls
     x-develop:
       watch:
         - action: sync
@@ -28,7 +29,7 @@ services:
     build:
       context: ./Database_Handler
     env_file:
-      - ./Database_Handler/.env
+      - services_urls
     x-develop:
       watch:
         - action: sync
@@ -38,3 +39,19 @@ services:
           path: ./Database_Handler/requirements.txt
     depends_on:
       - database
+
+  logger:
+    build:
+      context: ./Log_Service
+    env_file:
+      - ./Log_Service/.env
+      - services_urls
+    x-develop:
+      watch:
+        - action: sync
+          path: ./Log_Service/logger.py
+          target: /app/logger.py
+        - action: rebuild
+          path: ./Log_Service/requirements.txt
+    volumes:
+      - ./Log_Service/logs:/app/logs
