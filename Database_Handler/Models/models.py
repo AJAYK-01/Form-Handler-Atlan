@@ -12,13 +12,6 @@ class Form(db.Model):
     created_at = db.Column(db.DateTime)
 
 
-# class Question(db.Model):
-#     __tablename__ = 'question'
-#     id = db.Column(db.Integer, primary_key=True)
-#     form_id = db.Column(db.Integer, db.ForeignKey('form.id'))
-#     question_text = db.Column(db.String)
-#     question_type = db.Column(db.String)
-
 class Question(db.Model):
     __tablename__ = 'question'
     id = db.Column(db.Integer, primary_key=True)
