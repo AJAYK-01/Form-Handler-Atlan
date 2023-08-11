@@ -1,0 +1,5 @@
+Flask==2.3.2
+google_api_python_client==2.96.0
+protobuf==4.24.0
+psycopg2-binary==2.9.7
+SQLAlchemy==2.0.19

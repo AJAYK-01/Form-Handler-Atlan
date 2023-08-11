@@ -3,3 +3,4 @@ Database_Data/*
 *.env
 *__pycache__
 *logs/
+*google-sheets-service-key.json
