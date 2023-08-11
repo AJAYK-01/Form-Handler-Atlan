@@ -14,7 +14,7 @@ with app.app_context():
 
 
 # API route to create forms
-@app.route('/create-form', methods=['POST'])
+@app.route('/create-form', methods=['POST'], strict_slashes=False)
 def create_form():
     data = request.json  # Assuming JSON format
 
@@ -40,7 +40,7 @@ def create_form():
 
 
 # API route to handle submitting responses
-@app.route('/submit-response', methods=['POST'])
+@app.route('/submit-response', methods=['POST'], strict_slashes=False)
 def submit_response():
     data = request.json  # Assuming JSON format
 

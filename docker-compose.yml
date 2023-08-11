@@ -1,5 +1,13 @@
 version: '3.8'
 services:
+  api_gateway:
+    build:
+      context: ./API_Gateway
+    env_file:
+      - ./API_Gateway/.env
+    ports:
+      - "5000:8080"
+
   database:
     image: postgres:15.3-alpine3.18
     environment:
@@ -14,7 +22,5 @@ services:
       context: ./Database_Handler
     env_file:
       - ./Database_Handler/.env
-    ports:
-      - "5000:8080"
     depends_on:
       - database
