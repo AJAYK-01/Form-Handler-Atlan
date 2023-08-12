@@ -4,3 +4,4 @@ protobuf==4.24.0
 psycopg2-binary==2.9.7
 SQLAlchemy==2.0.19
 python-dotenv==1.0.0
+requests==2.31.0
