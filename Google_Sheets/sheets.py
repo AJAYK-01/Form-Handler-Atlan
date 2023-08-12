@@ -12,7 +12,7 @@ app = Flask(__name__)
 
 # helps identify the microservice during logging
 session = Session()
-session.headers.update({'X-Docker-Domain': 'google-sheets'})
+session.headers.update({'X-Docker-Domain': 'google_sheets'})
 LOGGER_URL = os.environ.get('LOGGER_URL')
 
 # Google Sheets API creds

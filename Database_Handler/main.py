@@ -11,7 +11,7 @@ db.init_app(app)
 
 # helps identify the microservice during logging
 session = Session()
-session.headers.update({'X-Docker-Domain': 'db-handler'})
+session.headers.update({'X-Docker-Domain': 'db_handler'})
 LOGGER_URL = os.environ.get('LOGGER_URL')
 
 # Call the init_db function before running the app

@@ -7,7 +7,7 @@ app = Flask(__name__)
 
 # helps identify the microservice during logging
 session = Session()
-session.headers.update({'X-Docker-Domain': 'api-gateway'})
+session.headers.update({'X-Docker-Domain': 'api_gateway'})
 LOGGER_URL = os.environ.get('LOGGER_URL')
 DB_HANDLER_URL = os.environ.get('DB_HANDLER_URL')
 

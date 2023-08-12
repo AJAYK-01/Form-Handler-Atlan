@@ -8,7 +8,7 @@ app = Flask(__name__)
 
 # helps identify the microservice during logging
 session = Session()
-session.headers.update({'X-Docker-Domain': 'sms-alert'})
+session.headers.update({'X-Docker-Domain': 'sms_alert'})
 LOGGER_URL = os.environ.get('LOGGER_URL')
 
 # Your Twilio Account Sid and Auth Token
