@@ -1,20 +1,20 @@
 version: '3.8'
 services:
-  # api_gateway:
-  #   build:
-  #     context: ./API_Gateway
-  #   env_file:
-  #     - ./API_Gateway/.env
-  #     - services_urls
-  #   x-develop:
-  #     watch:
-  #       - action: sync
-  #         path: ./API_Gateway/main.py
-  #         target: /app/main.py
-  #       - action: rebuild
-  #         path: ./API_Gateway/requirements.txt
-  #   ports:
-  #     - "5000:8080"
+  api_gateway:
+    build:
+      context: ./API_Gateway
+    env_file:
+      - ./API_Gateway/.env
+      - services_urls
+    x-develop:
+      watch:
+        - action: sync
+          path: ./API_Gateway/main.py
+          target: /app/main.py
+        - action: rebuild
+          path: ./API_Gateway/requirements.txt
+    ports:
+      - "5000:80"
 
   database:
     image: postgres:15.3-alpine3.18
@@ -25,26 +25,27 @@ services:
     volumes:
       - ./Database_Data:/var/lib/postgresql/data
 
-  # db_handler:
-  #   build:
-  #     context: ./Database_Handler
-  #   env_file:
-  #     - services_urls
-  #   x-develop:
-  #     watch:
-  #       - action: sync
-  #         path: ./Database_Handler/main.py
-  #         target: /app/main.py
-  #       - action: rebuild
-  #         path: ./Database_Handler/requirements.txt
-  #   depends_on:
-  #     - database
+  db_handler:
+    build:
+      context: ./Database_Handler
+    env_file:
+      - services_urls
+    x-develop:
+      watch:
+        - action: sync
+          path: ./Database_Handler/main.py
+          target: /app/main.py
+        - action: rebuild
+          path: ./Database_Handler/requirements.txt
+    depends_on:
+      - database
 
   google_sheets:
     build:
       context: ./Google_Sheets
     env_file:
       - services_urls
+      - ./Google_Sheets/.env
     x-develop:
       watch:
         - action: sync
@@ -55,19 +56,34 @@ services:
     depends_on:
       - database
     ports:
-      - "5002:8080"
-  # logger:
-  #   build:
-  #     context: ./Log_Service
-  #   env_file:
-  #     - ./Log_Service/.env
-  #     - services_urls
-  #   x-develop:
-  #     watch:
-  #       - action: sync
-  #         path: ./Log_Service/logger.py
-  #         target: /app/logger.py
-  #       - action: rebuild
-  #         path: ./Log_Service/requirements.txt
-  #   volumes:
-  #     - ./Log_Service/logs:/app/logs
+      - "5002:80"
+
+  sms_alert:
+    build:
+      context: ./SMS_Alert
+    env_file:
+      - ./SMS_Alert/.env
+    x-develop:
+      watch:
+        - action: sync
+          path: ./SMS_Alert/main.py
+          target: /app/main.py
+        - action: rebuild
+          path: ./SMS_Alert/requirements.txt
+    ports:
+      - "5003:80"
+  logger:
+    build:
+      context: ./Log_Service
+    env_file:
+      - ./Log_Service/.env
+      - services_urls
+    x-develop:
+      watch:
+        - action: sync
+          path: ./Log_Service/logger.py
+          target: /app/logger.py
+        - action: rebuild
+          path: ./Log_Service/requirements.txt
+    volumes:
+      - ./Log_Service/logs:/app/logs

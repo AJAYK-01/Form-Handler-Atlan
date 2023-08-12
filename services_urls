@@ -1,3 +1,3 @@
 DATABASE_URL="postgresql://postgres:atlan@database/database"
-LOGGER_URL="http://logger:8080"
-DB_HANDLER_URL="http://db_handler:8080"
+LOGGER_URL="http://logger"
+DB_HANDLER_URL="http://db_handler"

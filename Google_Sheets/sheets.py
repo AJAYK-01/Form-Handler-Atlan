@@ -2,12 +2,18 @@ from sqlalchemy import create_engine, select, Table, Column, Integer, String, Me
 from flask import Flask, request, jsonify
 from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
+from requests import Session
 import psycopg2
 import os
 
 from share import share_spreadsheet
 
 app = Flask(__name__)
+
+# helps identify the microservice during logging
+session = Session()
+session.headers.update({'X-Docker-Domain': 'google-sheets'})
+LOGGER_URL = os.environ.get('LOGGER_URL')
 
 # Google Sheets API creds
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets',
@@ -183,4 +189,4 @@ def export_form():
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8080, debug=True)
+    app.run(host='0.0.0.0', port=80, debug=os.environ.get('DEBUG'))
