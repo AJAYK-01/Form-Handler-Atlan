@@ -1,3 +1,6 @@
 DATABASE_URL="postgresql://postgres:atlan@database/database"
 LOGGER_URL="http://logger"
 DB_HANDLER_URL="http://db_handler"
+FORM_VALIDATION_URL="http://form_validation"
+GOOGLE_SHEETS_URL="http://google_sheets"
+SMS_ALERT_URL="http://sms_alert"

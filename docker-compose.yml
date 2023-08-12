@@ -1,20 +1,20 @@
 version: '3.8'
 services:
-  api_gateway:
-    build:
-      context: ./API_Gateway
-    env_file:
-      - ./API_Gateway/.env
-      - services_urls
-    x-develop:
-      watch:
-        - action: sync
-          path: ./API_Gateway/main.py
-          target: /app/main.py
-        - action: rebuild
-          path: ./API_Gateway/requirements.txt
-    ports:
-      - "5000:80"
+  # api_gateway:
+  #   build:
+  #     context: ./API_Gateway
+  #   env_file:
+  #     - ./API_Gateway/.env
+  #     - services_urls
+  #   x-develop:
+  #     watch:
+  #       - action: sync
+  #         path: ./API_Gateway/main.py
+  #         target: /app/main.py
+  #       - action: rebuild
+  #         path: ./API_Gateway/requirements.txt
+  #   ports:
+  #     - "5000:80"
 
   database:
     image: postgres:15.3-alpine3.18
@@ -25,53 +25,71 @@ services:
     volumes:
       - ./Database_Data:/var/lib/postgresql/data
 
-  db_handler:
+  # db_handler:
+  #   build:
+  #     context: ./Database_Handler
+  #   env_file:
+  #     - services_urls
+  #     - ./Database_Handler/.env
+  #   x-develop:
+  #     watch:
+  #       - action: sync
+  #         path: ./Database_Handler/main.py
+  #         target: /app/main.py
+  #       - action: rebuild
+  #         path: ./Database_Handler/requirements.txt
+  #   depends_on:
+  #     - database
+
+  form_validation:
     build:
-      context: ./Database_Handler
+      context: ./Form_Validation
     env_file:
+      - ./Form_Validation/.env
       - services_urls
     x-develop:
       watch:
         - action: sync
-          path: ./Database_Handler/main.py
+          path: ./Form_Validation/main.py
           target: /app/main.py
         - action: rebuild
-          path: ./Database_Handler/requirements.txt
-    depends_on:
-      - database
-
-  google_sheets:
-    build:
-      context: ./Google_Sheets
-    env_file:
-      - services_urls
-      - ./Google_Sheets/.env
-    x-develop:
-      watch:
-        - action: sync
-          path: ./Google_Sheets/sheets.py
-          target: /app/sheets.py
-        - action: rebuild
-          path: ./Google_Sheets/requirements.txt
+          path: ./Form_Validation/requirements.txt
     depends_on:
       - database
     ports:
-      - "5002:80"
+      - "5004:80"
+  # google_sheets:
+  #   build:
+  #     context: ./Google_Sheets
+  #   env_file:
+  #     - services_urls
+  #     - ./Google_Sheets/.env
+  #   x-develop:
+  #     watch:
+  #       - action: sync
+  #         path: ./Google_Sheets/sheets.py
+  #         target: /app/sheets.py
+  #       - action: rebuild
+  #         path: ./Google_Sheets/requirements.txt
+  #   depends_on:
+  #     - database
+  #   ports:
+  #     - "5002:80"
 
-  sms_alert:
-    build:
-      context: ./SMS_Alert
-    env_file:
-      - ./SMS_Alert/.env
-    x-develop:
-      watch:
-        - action: sync
-          path: ./SMS_Alert/main.py
-          target: /app/main.py
-        - action: rebuild
-          path: ./SMS_Alert/requirements.txt
-    ports:
-      - "5003:80"
+  # sms_alert:
+  #   build:
+  #     context: ./SMS_Alert
+  #   env_file:
+  #     - ./SMS_Alert/.env
+  #   x-develop:
+  #     watch:
+  #       - action: sync
+  #         path: ./SMS_Alert/main.py
+  #         target: /app/main.py
+  #       - action: rebuild
+  #         path: ./SMS_Alert/requirements.txt
+  #   ports:
+  #     - "5003:80"
   logger:
     build:
       context: ./Log_Service
