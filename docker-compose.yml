@@ -41,40 +41,40 @@ services:
   #   depends_on:
   #     - database
 
-  form_validation:
-    build:
-      context: ./Form_Validation
-    env_file:
-      - ./Form_Validation/.env
-      - services_urls
-    x-develop:
-      watch:
-        - action: sync
-          path: ./Form_Validation/main.py
-          target: /app/main.py
-        - action: rebuild
-          path: ./Form_Validation/requirements.txt
-    depends_on:
-      - database
-    ports:
-      - "5004:80"
-  # google_sheets:
+  # form_validation:
   #   build:
-  #     context: ./Google_Sheets
+  #     context: ./Form_Validation
   #   env_file:
+  #     - ./Form_Validation/.env
   #     - services_urls
-  #     - ./Google_Sheets/.env
   #   x-develop:
   #     watch:
   #       - action: sync
-  #         path: ./Google_Sheets/sheets.py
-  #         target: /app/sheets.py
+  #         path: ./Form_Validation/main.py
+  #         target: /app/main.py
   #       - action: rebuild
-  #         path: ./Google_Sheets/requirements.txt
+  #         path: ./Form_Validation/requirements.txt
   #   depends_on:
   #     - database
   #   ports:
-  #     - "5002:80"
+  #     - "5004:80"
+  google_sheets:
+    build:
+      context: ./Google_Sheets
+    env_file:
+      - services_urls
+      - ./Google_Sheets/.env
+    x-develop:
+      watch:
+        - action: sync
+          path: ./Google_Sheets/sheets.py
+          target: /app/sheets.py
+        - action: rebuild
+          path: ./Google_Sheets/requirements.txt
+    depends_on:
+      - database
+    ports:
+      - "5002:80"
 
   # sms_alert:
   #   build:

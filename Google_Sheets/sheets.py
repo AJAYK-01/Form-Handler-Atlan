@@ -3,7 +3,6 @@ from flask import Flask, request, jsonify
 from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
 from requests import Session
-import psycopg2
 import os
 
 from share import share_spreadsheet
@@ -72,11 +71,26 @@ def create_sheet(title):
 
 def write_data(spreadsheet_id, sheet_name, data):
     """Write data to a Google Sheet."""
+
+    # Check if a sheet with the same name already exists and append version number if necessary
+    sheets_metadata = sheets_service.spreadsheets().get(
+        spreadsheetId=spreadsheet_id).execute()
+    sheets = sheets_metadata.get('sheets', '')
+    sheet_names = [sheet.get("properties", {}).get("title", "")
+                   for sheet in sheets]
+
+    version_number = 1
+    new_sheet_name = sheet_name
+
+    while new_sheet_name in sheet_names:
+        new_sheet_name = f'{sheet_name} v{version_number}'
+        version_number += 1
+
     body = {
         'requests': [{
             'addSheet': {
                 'properties': {
-                    'title': sheet_name
+                    'title': new_sheet_name
                 }
             }
         }]
@@ -86,7 +100,7 @@ def write_data(spreadsheet_id, sheet_name, data):
     body = {
         'values': data
     }
-    range_ = f'{sheet_name}!A1'
+    range_ = f'{new_sheet_name}!A1'
     sheets_service.spreadsheets().values().update(
         spreadsheetId=spreadsheet_id, range=range_, valueInputOption='RAW', body=body).execute()
 
@@ -99,7 +113,7 @@ def export_all():
     email = req_body['email']
 
     # Create a new Google Sheet
-    spreadsheet_id = create_sheet('All Forms')
+    spreadsheet_id = create_sheet(f'All Forms for {email}')
 
     # Query the database for all forms
     query = select(form_table.c.id, form_table.c.title)
@@ -108,32 +122,49 @@ def export_all():
 
     # Export each form and its associated data
     for form_id, form_title in forms:
-        # Export form data
-        form_data = [[form_title]]
-        write_data(spreadsheet_id, f'Form {form_id}', form_data)
-
         # Export question data
         result = conn.execute(
-            select(question_table.c.id, question_table.c.question_text).where(question_table.c.form_id == form_id))
+            select(question_table.c.id, question_table.c.question_text)
+            .where(question_table.c.form_id == form_id))
         questions = result.fetchall()
-        question_data = [['ID', 'Question Text']] + \
-            [list(row) for row in questions]
-        write_data(spreadsheet_id, f'Form {form_id} Questions', question_data)
 
         # Export response data
         result = conn.execute(
-            select(response_table.c.id, response_table.c.email).where(response_table.c.form_id == form_id))
+            select(response_table.c.id, response_table.c.email)
+            .where(response_table.c.form_id == form_id))
         responses = result.fetchall()
-        response_data = [['ID', 'Email']] + [list(row) for row in responses]
-        write_data(spreadsheet_id, f'Form {form_id} Responses', response_data)
 
-        # Export answer data
-        result = conn.execute(
-            select(answer_table.c.id, answer_table.c.response_id, answer_table.c.question_id, answer_table.c.answer_text))
-        answers = result.fetchall()
-        answer_data = [['ID', 'Response ID',
-                        'Question ID', 'Answer Text']] + [list(row) for row in answers]
-        write_data(spreadsheet_id, f'Form {form_id} Answers', answer_data)
+        # Create header row with question text as column names
+        header_row = ['Response ID', 'Email'] + [row[1] for row in questions]
+
+        response_data = [header_row]
+
+        for response in responses:
+            response_row = list(response)
+
+            # Get answers for this response and add them to the row
+            result = conn.execute(
+                select(answer_table.c.question_id, answer_table.c.answer_text)
+                .where(answer_table.c.response_id == response[0]))
+            answers = result.fetchall()
+            answer_dict = {row[0]: row[1] for row in answers}
+            response_row += [answer_dict.get(question[0], '')
+                             for question in questions]
+
+            response_data.append(response_row)
+
+        write_data(spreadsheet_id, form_title, response_data)
+
+    # Delete default "Sheet1"
+    body = {
+        'requests': [{
+            'deleteSheet': {
+                'sheetId': 0
+            }
+        }]
+    }
+    sheets_service.spreadsheets().batchUpdate(
+        spreadsheetId=spreadsheet_id, body=body).execute()
 
     res = share_spreadsheet(spreadsheet_id, email=email, creds=credentials)
 
@@ -148,40 +179,60 @@ def export_form():
     email = req_body['email']
     form_id = req_body['form_id']
 
-    # Create a new Google Sheet
-    spreadsheet_id = create_sheet(f'Form {form_id}')
-
     # Query the database for the form data
     result = conn.execute(
         select(form_table.c.title).where(form_table.c.id == form_id))
     form_title = result.fetchone()[0]
 
-    # Export form data
-    form_data = [[form_title]]
-    write_data(spreadsheet_id, f'Form {form_id}', form_data)
+    # Create a new Google Sheet
+    spreadsheet_id = create_sheet(f'{form_title}')
 
     # Export question data
     result = conn.execute(
-        select(question_table.c.id, question_table.c.question_text).where(question_table.c.form_id == form_id))
+        select(question_table.c.id, question_table.c.question_text)
+        .where(question_table.c.form_id == form_id))
+
     questions = result.fetchall()
-    question_data = [['ID', 'Question Text']] + \
-        [list(row) for row in questions]
-    write_data(spreadsheet_id, f'Form {form_id} Questions', question_data)
 
     # Export response data
     result = conn.execute(
-        select(response_table.c.id, response_table.c.email).where(response_table.c.form_id == form_id))
-    responses = result.fetchall()
-    response_data = [['ID', 'Email']] + [list(row) for row in responses]
-    write_data(spreadsheet_id, f'Form {form_id} Responses', response_data)
+        select(response_table.c.id, response_table.c.email)
+        .where(response_table.c.form_id == form_id))
 
-    # Export answer data
-    result = conn.execute(
-        select(answer_table.c.id, answer_table.c.response_id, answer_table.c.question_id, answer_table.c.answer_text))
-    answers = result.fetchall()
-    answer_data = [['ID', 'Response ID',
-                    'Question ID', 'Answer Text']] + [list(row) for row in answers]
-    write_data(spreadsheet_id, f'Form {form_id} Answers', answer_data)
+    responses = result.fetchall()
+
+    # Create header row with question text as column names
+    header_row = ['Response ID', 'Email'] + [row[1] for row in questions]
+
+    response_data = [header_row]
+
+    for response in responses:
+        response_row = list(response)
+
+        # Get answers for this response and add them to the row
+        result = conn.execute(
+            select(answer_table.c.question_id, answer_table.c.answer_text)
+            .where(answer_table.c.response_id == response[0]))
+
+        answers = result.fetchall()
+        answer_dict = {row[0]: row[1] for row in answers}
+        response_row += [answer_dict.get(question[0], '')
+                         for question in questions]
+
+        response_data.append(response_row)
+
+    write_data(spreadsheet_id, form_title, response_data)
+
+    # Delete default "Sheet1"
+    body = {
+        'requests': [{
+            'deleteSheet': {
+                'sheetId': 0
+            }
+        }]
+    }
+    sheets_service.spreadsheets().batchUpdate(
+        spreadsheetId=spreadsheet_id, body=body).execute()
 
     res = share_spreadsheet(spreadsheet_id, email=email, creds=credentials)
 
