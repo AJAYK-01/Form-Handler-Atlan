@@ -1,6 +1,7 @@
-from flask import Flask, request
+from flask import Flask, request, jsonify
 import logging
 import os
+import re
 
 app = Flask(__name__)
 
@@ -51,6 +52,30 @@ def logger():
     else:
         return f'Invalid log level: {level}', 400
     return 'Message logged successfully', 200
+
+
+@app.route('/', methods=['GET'], strict_slashes=False)
+def get_logs():
+    ''' Returns the specified number of log entries'''
+    entries = int(request.args.get('entries', 10))
+
+    with open(log_file, 'r', encoding='utf-8') as lf_io:
+        lines = lf_io.readlines()
+
+    # Get the last n lines from the log file
+    logs = []
+    count = 0
+    for line in reversed(lines):
+        if re.match(r'\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}', line):
+            count += 1
+            if count > entries:
+                break
+            logs.insert(0, line)
+        else:
+            logs[0] += line
+
+    # return logs entries as strings (new line already added)
+    return ''.join(logs)
 
 
 if __name__ == '__main__':

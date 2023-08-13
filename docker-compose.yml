@@ -105,3 +105,5 @@ services:
           path: ./Log_Service/requirements.txt
     volumes:
       - ./Log_Service/logs:/app/logs
+    ports:
+      - 5005:80
