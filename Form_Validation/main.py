@@ -1,4 +1,5 @@
 import os
+import re
 from flask import Flask, request, jsonify
 from sqlalchemy import text, create_engine
 
@@ -28,6 +29,15 @@ def validate_response():
         data = request.json
         form_id = data.get('form_id')
         validation_query = data.get('validation_query')
+
+        # Check if the query contains any database modification keywords at the beginning of an SQL command using a regular expression
+        if re.search(r'\b(insert|update|delete)\b', validation_query, re.IGNORECASE):
+            # Log warning
+            log_data = {
+                'message': f'Attempted to run a database modification query: {validation_query}', 'level': 'warning'}
+            session.post(f'{LOGGER_URL}/log', json=log_data)
+            return jsonify(valid=False, errors=['Database modification queries are not allowed'])
+
         with engine.connect() as connection:
             # Execute the validation query
             result = connection.execute(text(validation_query))
