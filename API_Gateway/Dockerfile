@@ -16,5 +16,8 @@ EXPOSE 80
 # Set environment variables from .env file
 RUN set -a; source .env; set +a
 
-# Run main.py when the container launches
-CMD ["python", "main.py"]
+# Make wait for db script executable
+RUN chmod +x ./wait-for-db.sh
+
+# Run main.py when the container launches but wait for database to launch
+CMD ["./wait-for-db.sh", "database:5432", "--", "python", "main.py"]
