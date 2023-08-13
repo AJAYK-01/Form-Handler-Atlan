@@ -54,7 +54,7 @@ def create_form():
         log_data = {'message': str(error), 'level': 'error'}
         session.post(f'{LOGGER_URL}/log', json=log_data)
 
-        return jsonify(message='Error occurred: check logs for details')
+        return jsonify(message='Error occurred: check logs for details'), 500
 
 
 @app.route('/submit-response', methods=['POST'], strict_slashes=False)
@@ -93,7 +93,7 @@ def submit_response():
         log_data = {'message': str(error), 'level': 'error'}
         session.post(f'{LOGGER_URL}/log', json=log_data)
 
-        return jsonify(message='Error occurred: check logs for details')
+        return jsonify(message='Error occurred: check logs for details'), 500
 
 
 if __name__ == '__main__':

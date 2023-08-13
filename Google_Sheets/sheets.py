@@ -109,29 +109,121 @@ def write_data(spreadsheet_id, sheet_name, data):
 def export_all():
     """Export all forms and their associated data to Google Sheets."""
 
-    req_body = request.json
-    email = req_body['email']
+    try:
+        req_body = request.json
+        email = req_body['email']
 
-    # Create a new Google Sheet
-    spreadsheet_id = create_sheet(f'All Forms for {email}')
+        # Create a new Google Sheet
+        spreadsheet_id = create_sheet(f'All Forms for {email}')
 
-    # Query the database for all forms
-    query = select(form_table.c.id, form_table.c.title)
-    result = conn.execute(query)
-    forms = result.fetchall()
+        # Query the database for all forms
+        query = select(form_table.c.id, form_table.c.title)
+        result = conn.execute(query)
+        forms = result.fetchall()
 
-    # Export each form and its associated data
-    for form_id, form_title in forms:
+        # Export each form and its associated data
+        for form_id, form_title in forms:
+            # Export question data
+            result = conn.execute(
+                select(question_table.c.id, question_table.c.question_text)
+                .where(question_table.c.form_id == form_id))
+            questions = result.fetchall()
+
+            # Export response data
+            result = conn.execute(
+                select(response_table.c.id, response_table.c.email)
+                .where(response_table.c.form_id == form_id))
+            responses = result.fetchall()
+
+            # Create header row with question text as column names
+            header_row = ['Response ID', 'Email'] + [row[1]
+                                                     for row in questions]
+
+            response_data = [header_row]
+
+            for response in responses:
+                response_row = list(response)
+
+                # Get answers for this response and add them to the row
+                result = conn.execute(
+                    select(answer_table.c.question_id,
+                           answer_table.c.answer_text)
+                    .where(answer_table.c.response_id == response[0]))
+                answers = result.fetchall()
+                answer_dict = {row[0]: row[1] for row in answers}
+                response_row += [answer_dict.get(question[0], '')
+                                 for question in questions]
+
+                response_data.append(response_row)
+
+            write_data(spreadsheet_id, form_title, response_data)
+
+        # Delete default "Sheet1"
+        body = {
+            'requests': [{
+                'deleteSheet': {
+                    'sheetId': 0
+                }
+            }]
+        }
+        sheets_service.spreadsheets().batchUpdate(
+            spreadsheetId=spreadsheet_id, body=body).execute()
+
+        res = share_spreadsheet(spreadsheet_id, email=email, creds=credentials)
+
+        # Log that all forms were exported
+        log_data = {'message': f'Exported all forms for {email}'}
+        session.post(f'{LOGGER_URL}/log', json=log_data)
+
+        return jsonify(message=res)
+
+    except Exception as error:
+        # Log Error
+        log_data = {'message': str(error), 'level': 'error'}
+        session.post(f'{LOGGER_URL}/log', json=log_data)
+
+        return jsonify(message='Error occurred: check logs for details'), 500
+
+
+@app.route('/export-form', methods=['POST'], strict_slashes=False)
+def export_form():
+    """Export a single form and its associated data to Google Sheets."""
+
+    try:
+        req_body = request.json
+        email = req_body['email']
+        form_id = req_body['form_id']
+
+        # Query the database for the form data
+        result = conn.execute(
+            select(form_table.c.title).where(form_table.c.id == form_id))
+        row = result.fetchone()
+
+        if row is None:
+            # Log Error
+            log_data = {
+                'message': f'Form with ID {form_id} does not exist', 'level': 'error'}
+            session.post(f'{LOGGER_URL}/log', json=log_data)
+
+            return jsonify(message=f'Form with ID {form_id} does not exist'), 400
+
+        form_title = row[0]
+
+        # Create a new Google Sheet
+        spreadsheet_id = create_sheet(f'{form_title}')
+
         # Export question data
         result = conn.execute(
             select(question_table.c.id, question_table.c.question_text)
             .where(question_table.c.form_id == form_id))
+
         questions = result.fetchall()
 
         # Export response data
         result = conn.execute(
             select(response_table.c.id, response_table.c.email)
             .where(response_table.c.form_id == form_id))
+
         responses = result.fetchall()
 
         # Create header row with question text as column names
@@ -146,6 +238,7 @@ def export_all():
             result = conn.execute(
                 select(answer_table.c.question_id, answer_table.c.answer_text)
                 .where(answer_table.c.response_id == response[0]))
+
             answers = result.fetchall()
             answer_dict = {row[0]: row[1] for row in answers}
             response_row += [answer_dict.get(question[0], '')
@@ -155,88 +248,31 @@ def export_all():
 
         write_data(spreadsheet_id, form_title, response_data)
 
-    # Delete default "Sheet1"
-    body = {
-        'requests': [{
-            'deleteSheet': {
-                'sheetId': 0
-            }
-        }]
-    }
-    sheets_service.spreadsheets().batchUpdate(
-        spreadsheetId=spreadsheet_id, body=body).execute()
+        # Delete default "Sheet1"
+        body = {
+            'requests': [{
+                'deleteSheet': {
+                    'sheetId': 0
+                }
+            }]
+        }
+        sheets_service.spreadsheets().batchUpdate(
+            spreadsheetId=spreadsheet_id, body=body).execute()
 
-    res = share_spreadsheet(spreadsheet_id, email=email, creds=credentials)
+        res = share_spreadsheet(spreadsheet_id, email=email, creds=credentials)
 
-    return jsonify(message=res)
+        # Log that a single form was exported
+        log_data = {'message': f'Exported form with ID: {form_id}'}
+        session.post(f'{LOGGER_URL}/log', json=log_data)
 
+        return jsonify(message=res)
 
-@app.route('/export-form', methods=['POST'], strict_slashes=False)
-def export_form():
-    """Export a single form and its associated data to Google Sheets."""
+    except Exception as error:
+        # Log Error
+        log_data = {'message': str(error), 'level': 'error'}
+        session.post(f'{LOGGER_URL}/log', json=log_data)
 
-    req_body = request.json
-    email = req_body['email']
-    form_id = req_body['form_id']
-
-    # Query the database for the form data
-    result = conn.execute(
-        select(form_table.c.title).where(form_table.c.id == form_id))
-    form_title = result.fetchone()[0]
-
-    # Create a new Google Sheet
-    spreadsheet_id = create_sheet(f'{form_title}')
-
-    # Export question data
-    result = conn.execute(
-        select(question_table.c.id, question_table.c.question_text)
-        .where(question_table.c.form_id == form_id))
-
-    questions = result.fetchall()
-
-    # Export response data
-    result = conn.execute(
-        select(response_table.c.id, response_table.c.email)
-        .where(response_table.c.form_id == form_id))
-
-    responses = result.fetchall()
-
-    # Create header row with question text as column names
-    header_row = ['Response ID', 'Email'] + [row[1] for row in questions]
-
-    response_data = [header_row]
-
-    for response in responses:
-        response_row = list(response)
-
-        # Get answers for this response and add them to the row
-        result = conn.execute(
-            select(answer_table.c.question_id, answer_table.c.answer_text)
-            .where(answer_table.c.response_id == response[0]))
-
-        answers = result.fetchall()
-        answer_dict = {row[0]: row[1] for row in answers}
-        response_row += [answer_dict.get(question[0], '')
-                         for question in questions]
-
-        response_data.append(response_row)
-
-    write_data(spreadsheet_id, form_title, response_data)
-
-    # Delete default "Sheet1"
-    body = {
-        'requests': [{
-            'deleteSheet': {
-                'sheetId': 0
-            }
-        }]
-    }
-    sheets_service.spreadsheets().batchUpdate(
-        spreadsheetId=spreadsheet_id, body=body).execute()
-
-    res = share_spreadsheet(spreadsheet_id, email=email, creds=credentials)
-
-    return jsonify(message=res)
+        return jsonify(message='Error occurred: check logs for details'), 500
 
 
 if __name__ == '__main__':
