@@ -66,8 +66,6 @@ def get_logs():
     logs = []
     count = 0
     for line in lines[::-1]:
-        print("new", flush=True)
-        print(line, flush=True)
         if re.match(r'\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}', line):
             count += 1
             if count > entries:
