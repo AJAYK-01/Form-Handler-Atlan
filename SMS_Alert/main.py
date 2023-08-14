@@ -18,22 +18,33 @@ twilio_number = os.environ.get('TWILIO_NUMBER')
 client = Client(account_sid, auth_token)
 
 
-@app.route('/send-sms', methods=['POST'], strict_slashes=False)
+@app.route('/', methods=['POST'], strict_slashes=False)
 def send_sms():
     ''' To send sms receipt for response submission '''
+    try:
+        data = request.json
+        customer_phone_number = data.get('phone_number')
+        # Message content
+        message_content = 'Your Response has been submitted. Thank you.'
+        # Send the SMS
 
-    data = request.json
-    customer_phone_number = data.get('phone_number')
-    # Message content
-    message_content = 'Your Response has been submitted. Thank you.'
-    # Send the SMS
+        message = client.messages.create(
+            to=customer_phone_number,
+            from_=twilio_number,
+            body=message_content)
 
-    message = client.messages.create(
-        to=customer_phone_number,
-        from_=twilio_number,
-        body=message_content)
+        # Log that an SMS was sent
+        log_data = {'message': f'Sent SMS to {customer_phone_number}'}
+        session.post(f'{LOGGER_URL}/log', json=log_data)
 
-    return {'status': str(message)}
+        return {'status': message.status}
+
+    except Exception as error:
+        # Log Error
+        log_data = {'message': str(error), 'level': 'error'}
+        session.post(f'{LOGGER_URL}/log', json=log_data)
+
+        return jsonify(message='Error occurred: check logs for details'), 500
 
 
 if __name__ == '__main__':
