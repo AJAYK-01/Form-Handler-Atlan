@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, select, Table, Column, Integer, String, MetaData
+from sqlalchemy import create_engine, select, Table, Column, Integer, String, TIMESTAMP, cast, MetaData
 from flask import Flask, request, jsonify
 from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
@@ -41,6 +41,8 @@ response_table = Table('response', metadata,
                        Column('id', Integer, primary_key=True),
                        Column('form_id', Integer),
                        Column('email', String),
+                       Column('phone', String),
+                       Column('submitted_at', TIMESTAMP)
                        )
 answer_table = Table('answer', metadata,
                      Column('id', Integer, primary_key=True),
@@ -77,13 +79,14 @@ def export_all():
 
             # Export response data
             result = conn.execute(
-                select(response_table.c.id, response_table.c.email)
+                select(response_table.c.id, response_table.c.email,
+                       response_table.c.phone, cast(response_table.c.submitted_at, String))
                 .where(response_table.c.form_id == form_id))
             responses = result.fetchall()
 
             # Create header row with question text as column names
-            header_row = ['Response ID', 'Email'] + [row[1]
-                                                     for row in questions]
+            header_row = ['Response ID', 'Email', 'Phone', 'Submitted At'] + [row[1]
+                                                                              for row in questions]
 
             response_data = [header_row]
 
@@ -162,13 +165,15 @@ def export_form():
 
         # Export response data
         result = conn.execute(
-            select(response_table.c.id, response_table.c.email)
+            select(response_table.c.id, response_table.c.email,
+                   response_table.c.phone, cast(response_table.c.submitted_at, String))
             .where(response_table.c.form_id == form_id))
 
         responses = result.fetchall()
 
         # Create header row with question text as column names
-        header_row = ['Response ID', 'Email'] + [row[1] for row in questions]
+        header_row = ['Response ID', 'Email', ' Phone',
+                      'Submitted At'] + [row[1] for row in questions]
 
         response_data = [header_row]
 
