@@ -42,8 +42,6 @@ services:
           path: ./Database_Handler/requirements.txt
     depends_on:
       - api_gateway
-    ports:
-      - "5010:80"
 
   form_validation:
     build:
@@ -60,8 +58,6 @@ services:
           path: ./Form_Validation/requirements.txt
     depends_on:
       - api_gateway
-    # ports:
-    #   - "5004:80"
 
   search_slangs:
     build:
@@ -78,8 +74,6 @@ services:
           path: ./Search_Slangs/requirements.txt
     depends_on:
       - api_gateway
-    ports:
-      - "5006:80"
 
   google_sheets:
     build:
@@ -96,14 +90,13 @@ services:
           path: ./Google_Sheets/requirements.txt
     depends_on:
       - api_gateway
-    ports:
-      - "5002:80"
 
   sms_alert:
     build:
       context: ./SMS_Alert
     env_file:
       - ./SMS_Alert/.env
+      - services_urls
     x-develop:
       watch:
         - action: sync
@@ -113,8 +106,7 @@ services:
           path: ./SMS_Alert/requirements.txt
     depends_on:
       - api_gateway
-    # ports:
-    #   - "5003:80"
+
   logger:
     build:
       context: ./Log_Service

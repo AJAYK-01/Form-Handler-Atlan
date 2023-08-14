@@ -17,7 +17,7 @@ DATABASE_URL = os.environ.get('DATABASE_URL')
 engine = create_engine(DATABASE_URL)
 
 
-@app.route('/validate-response', methods=['POST'])
+@app.route('/', methods=['POST'])
 def validate_response():
     '''
       Validates the forms as per rules required by client 

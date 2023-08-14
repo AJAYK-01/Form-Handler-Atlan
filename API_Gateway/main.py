@@ -8,75 +8,88 @@ app = Flask(__name__)
 # helps identify the microservice during logging
 session = Session()
 session.headers.update({'X-Docker-Domain': 'api_gateway'})
+
+# Fetch url enpoints from services_urls
 LOGGER_URL = os.environ.get('LOGGER_URL')
 DB_HANDLER_URL = os.environ.get('DB_HANDLER_URL')
+FORM_VALIDATION_URL = os.environ.get('FORM_VALIDATION_URL')
+GOOGLE_SHEETS_URL = os.environ.get('GOOGLE_SHEETS_URL')
+SMS_ALERT_URL = os.environ.get('SMS_ALERT_URL')
+SEARCH_SLANGS_URL = os.environ.get('SEARCH_SLANGS_URL')
+
+
+@app.route('/create-form', methods=['POST'], strict_slashes=False)
+def create_form():
+    ''' Forward form creation data to the database handler '''
+    response = requests.post(
+        f'{DB_HANDLER_URL}/create-form', json=request.json, timeout=60)
+
+    return response.text, response.status_code
 
 
 @app.route('/get-form', methods=['GET'], strict_slashes=False)
 def get_form():
     ''' Fetch form to client with form id '''
-    try:
-        # Get the form_id parameter from the query string
-        form_id = request.args.get('form_id', type=int)
+    response = requests.get(
+        f'{DB_HANDLER_URL}/get-form', params=request.args, timeout=60)
 
-        if not form_id:
-            return jsonify(message='Missing form_id parameter'), 400
-
-        # Get form data from database
-        response = requests.get(
-            f'{DB_HANDLER_URL}/get-form', params={'form_id': form_id}, timeout=60)
-        if response.status_code != 200:
-            return response.text, response.status_code
-        else:
-            return response.text
-    except Exception as error:
-        # Log Error
-        log_data = {'message': str(error), 'level': 'error'}
-        session.post(f'{LOGGER_URL}/log', json=log_data)
-
-        return jsonify(message='Error occurred: check logs for details')
+    return response.text, response.status_code
 
 
-@app.route('/submit-form', methods=['POST'])
+@app.route('/submit-form', methods=['POST'], strict_slashes=False)
 def submit_form():
-    ''' Route to handle form submissions '''
+    ''' Forward form submission data to the database handler '''
+    response = requests.post(
+        f'{DB_HANDLER_URL}/submit-response', json=request.json, timeout=60)
 
-    # Received form submission
-    log_data = {'message': 'New Form Submission Received'}
-    session.post(f'{LOGGER_URL}/log', json=log_data)
+    return response.text, response.status_code
 
-    try:
-        data = request.json
 
-        # # Validate form data
-        # validation_response = requests.post(
-        #     FORM_VALIDATION_URL, json=data, timeout=60)
-        # if validation_response.status_code != 200:
-        #     return validation_response.text, validation_response.status_code
+@app.route('/validate-response', methods=['POST'], strict_slashes=False)
+def validate_response():
+    ''' Forward form validation data to the database handler '''
+    # Forward form validation data to the database handler
+    response = requests.post(
+        f'{FORM_VALIDATION_URL}/', json=request.json, timeout=60)
 
-        # Add form data to database
-        add_to_db_response = requests.post(
-            f'{DB_HANDLER_URL}/submit-response', json=data, timeout=60)
-        if add_to_db_response.status_code != 200:
-            return add_to_db_response.text, add_to_db_response.status_code
-        else:
-            return add_to_db_response.text
+    return response.text, response.status_code
 
-        # # Export form data to Google Sheets
-        # export_to_sheets_response = requests.post(
-        #     EXPORT_TO_SHEETS_URL, json=data, timeout=60)
 
-        # if export_to_sheets_response.status_code != 200:
-        #     return export_to_sheets_response.text, export_to_sheets_response.status_code
+@app.route('/sheets-export', methods=['POST'], strict_slashes=False)
+def sheets_export():
+    ''' Forward form export data to the Google Sheets handler '''
+    response = requests.post(
+        f'{GOOGLE_SHEETS_URL}/export-form', json=request.json, timeout=60)
 
-        # return 'Form submitted successfully', 200
+    return response.text, response.status_code
 
-    except Exception as error:
-        # Log Error
-        log_data = {'message': str(error), 'level': 'error'}
-        session.post(f'{LOGGER_URL}/log', json=log_data)
 
-        return jsonify(message='Error occurred: check logs for details')
+@app.route('/sheets-export-all', methods=['POST'], strict_slashes=False)
+def sheets_export_all():
+    ''' Forward all forms export data to the Google Sheets handler '''
+    response = requests.post(
+        f'{GOOGLE_SHEETS_URL}/export-all', json=request.json, timeout=60)
+
+    return response.text, response.status_code
+
+
+@app.route('/sms-alert', methods=['POST'], strict_slashes=False)
+def sms_send():
+    ''' Forward SMS data to the SMS handler '''
+    response = requests.post(
+        f'{SMS_ALERT_URL}/', json=request.json, timeout=60)
+
+    return response.text, response.status_code
+
+
+@app.route('/search-slangs', methods=['POST'], strict_slashes=False)
+def search_slangs():
+    ''' Forward slang search data to the database handler '''
+    # Forward slang search data to the database handler
+    response = requests.post(
+        f'{SEARCH_SLANGS_URL}', json=request.json, timeout=60)
+
+    return response.text, response.status_code
 
 
 if __name__ == '__main__':
