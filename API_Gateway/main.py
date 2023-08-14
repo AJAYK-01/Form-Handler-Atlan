@@ -73,13 +73,14 @@ def sheets_export_all():
     return response.text, response.status_code
 
 
-@app.route('/sms-alert', methods=['POST'], strict_slashes=False)
-def sms_send():
-    ''' Forward SMS data to the SMS handler '''
-    response = requests.post(
-        f'{SMS_ALERT_URL}/', json=request.json, timeout=60)
+# SMS alert endpoint hidden and moved to only being used by databse handler after form submission
+# @app.route('/sms-alert', methods=['POST'], strict_slashes=False)
+# def sms_send():
+#     ''' Forward SMS data to the SMS handler '''
+#     response = requests.post(
+#         f'{SMS_ALERT_URL}/', json=request.json, timeout=60)
 
-    return response.text, response.status_code
+#     return response.text, response.status_code
 
 
 @app.route('/search-slangs', methods=['POST'], strict_slashes=False)

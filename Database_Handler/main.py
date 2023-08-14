@@ -4,6 +4,8 @@ from Models.models import db, init_db, Form, Question, Response, Answer
 from requests import Session
 import os
 
+from Helpers.sms import sms_send
+
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL')
 
@@ -91,7 +93,15 @@ def submit_response():
         log_data = {'message': f'Submitted new response with ID: {response.id}'}
         session.post(f'{LOGGER_URL}/log', json=log_data)
 
-        return jsonify(message='Response submit successfully')
+        try:
+            sms = sms_send(phone_number=phone)
+            if sms[1] != 200:
+                return jsonify(message='Response submit successfully but couldn\'t send sms')
+
+        except Exception as error:
+            return jsonify(message='Response submit successfully but couldn\'t send sms')
+
+        return jsonify(message='Response submit successfully and sms sent')
 
     except Exception as error:
         # Log Error
