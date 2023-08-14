@@ -12,6 +12,31 @@ LOGGER_URL = os.environ.get('LOGGER_URL')
 DB_HANDLER_URL = os.environ.get('DB_HANDLER_URL')
 
 
+@app.route('/get-form', methods=['GET'], strict_slashes=False)
+def get_form():
+    ''' Fetch form to client with form id '''
+    try:
+        # Get the form_id parameter from the query string
+        form_id = request.args.get('form_id', type=int)
+
+        if not form_id:
+            return jsonify(message='Missing form_id parameter'), 400
+
+        # Get form data from database
+        response = requests.get(
+            f'{DB_HANDLER_URL}/get-form', params={'form_id': form_id}, timeout=60)
+        if response.status_code != 200:
+            return response.text, response.status_code
+        else:
+            return response.text
+    except Exception as error:
+        # Log Error
+        log_data = {'message': str(error), 'level': 'error'}
+        session.post(f'{LOGGER_URL}/log', json=log_data)
+
+        return jsonify(message='Error occurred: check logs for details')
+
+
 @app.route('/submit-form', methods=['POST'])
 def submit_form():
     ''' Route to handle form submissions '''

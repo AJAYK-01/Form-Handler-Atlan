@@ -101,5 +101,52 @@ def submit_response():
         return jsonify(message='Error occurred: check logs for details'), 500
 
 
+@app.route('/get-form', methods=['GET'], strict_slashes=False)
+def get_form():
+    ''' API route to fetch a form by its id '''
+    try:
+        # Get the form_id parameter from the query string
+        form_id = request.args.get('form_id', type=int)
+
+        if not form_id:
+            return jsonify(message='Missing form_id parameter'), 400
+
+        # Get the form with the given id
+        form = Form.query.get(form_id)
+
+        if not form:
+            return jsonify(message='Form not found'), 404
+
+        # Serialize the form data
+        form_data = {
+            'id': form.id,
+            'title': form.title,
+            'created_at': form.created_at.isoformat(),
+            'questions': []
+        }
+
+        # Serialize the questions data
+        for question in form.questions:
+            question_data = {
+                'id': question.id,
+                'question_text': question.question_text,
+                'question_type': question.question_type
+            }
+            form_data['questions'].append(question_data)
+
+        # Log that a new form fetch request was done
+        log_data = {'message': f'Request a form with ID: {form_id}'}
+        session.post(f'{LOGGER_URL}/log', json=log_data)
+
+        return jsonify(form=form_data)
+
+    except Exception as error:
+        # Log Error
+        log_data = {'message': str(error), 'level': 'error'}
+        session.post(f'{LOGGER_URL}/log', json=log_data)
+
+        return jsonify(message='Error occurred: check logs for details'), 500
+
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=80, debug=os.environ.get('DEBUG'))
