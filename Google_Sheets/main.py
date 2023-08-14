@@ -52,6 +52,50 @@ answer_table = Table('answer', metadata,
                      )
 
 
+def export_form_data(form_id, spreadsheet_id, form_title):
+    """Export form data for a single form to a Google Sheet."""
+
+    # Export question data
+    result = conn.execute(
+        select(question_table.c.id, question_table.c.question_text)
+        .where(question_table.c.form_id == form_id))
+    questions = result.fetchall()
+
+    # Export response data
+    result = conn.execute(
+        select(response_table.c.id, response_table.c.email,
+               response_table.c.phone, cast(response_table.c.submitted_at, String))
+        .where(response_table.c.form_id == form_id))
+    responses = result.fetchall()
+
+    # Create header row with question text as column names
+    header_row = ['Response No', 'Email', 'Phone', 'Submitted At'] + [row[1]
+                                                                      for row in questions]
+
+    response_data = [header_row]
+
+    serial_no = 1
+    for response in responses:
+        response_row = [serial_no] + list(response)[1:]
+
+        # Get answers for this response and add them to the row
+        result = conn.execute(
+            select(answer_table.c.question_id,
+                   answer_table.c.answer_text)
+            .where(answer_table.c.response_id == response[0]))
+        answers = result.fetchall()
+        answer_dict = {row[0]: row[1] for row in answers}
+
+        for _, values in answer_dict.items():
+            response_row.append(values)
+
+        response_data.append(response_row)
+        serial_no += 1
+
+    sheets.write_data(spreadsheet_id=spreadsheet_id,
+                      sheet_name=form_title, data=response_data)
+
+
 @app.route('/export-all', methods=['POST'], strict_slashes=False)
 def export_all():
     """Export all forms and their associated data to Google Sheets."""
@@ -71,43 +115,7 @@ def export_all():
 
         # Export each form and its associated data
         for form_id, form_title in forms:
-            # Export question data
-            result = conn.execute(
-                select(question_table.c.id, question_table.c.question_text)
-                .where(question_table.c.form_id == form_id))
-            questions = result.fetchall()
-
-            # Export response data
-            result = conn.execute(
-                select(response_table.c.id, response_table.c.email,
-                       response_table.c.phone, cast(response_table.c.submitted_at, String))
-                .where(response_table.c.form_id == form_id))
-            responses = result.fetchall()
-
-            # Create header row with question text as column names
-            header_row = ['Response ID', 'Email', 'Phone', 'Submitted At'] + [row[1]
-                                                                              for row in questions]
-
-            response_data = [header_row]
-
-            for response in responses:
-                response_row = list(response)
-
-                # Get answers for this response and add them to the row
-                result = conn.execute(
-                    select(answer_table.c.question_id,
-                           answer_table.c.answer_text)
-                    .where(answer_table.c.response_id == response[0]))
-                answers = result.fetchall()
-                answer_dict = {row[0]: row[1] for row in answers}
-
-                for _, values in answer_dict.items():
-                    response_row.append(values)
-
-                response_data.append(response_row)
-
-            sheets.write_data(spreadsheet_id=spreadsheet_id,
-                              sheet_name=form_title, data=response_data)
+            export_form_data(form_id, spreadsheet_id, form_title)
 
         # Delete default "Sheet1"
         sheets.delete_default_sheet(spreadsheet_id=spreadsheet_id)
@@ -156,45 +164,7 @@ def export_form():
         # Create a new Google Sheet
         spreadsheet_id = sheets.create_sheet(title=f'{form_title}')
 
-        # Export question data
-        result = conn.execute(
-            select(question_table.c.id, question_table.c.question_text)
-            .where(question_table.c.form_id == form_id))
-
-        questions = result.fetchall()
-
-        # Export response data
-        result = conn.execute(
-            select(response_table.c.id, response_table.c.email,
-                   response_table.c.phone, cast(response_table.c.submitted_at, String))
-            .where(response_table.c.form_id == form_id))
-
-        responses = result.fetchall()
-
-        # Create header row with question text as column names
-        header_row = ['Response ID', 'Email', ' Phone',
-                      'Submitted At'] + [row[1] for row in questions]
-
-        response_data = [header_row]
-
-        for response in responses:
-            response_row = list(response)
-
-            # Get answers for this response and add them to the row
-            result = conn.execute(
-                select(answer_table.c.question_id, answer_table.c.answer_text)
-                .where(answer_table.c.response_id == response[0]))
-
-            answers = result.fetchall()
-            answer_dict = {row[0]: row[1] for row in answers}
-
-            for _, values in answer_dict.items():
-                response_row.append(values)
-
-            response_data.append(response_row)
-
-        sheets.write_data(spreadsheet_id=spreadsheet_id,
-                          sheet_name=form_title, data=response_data)
+        export_form_data(form_id, spreadsheet_id, form_title)
 
         # Delete default "Sheet1"
         sheets.delete_default_sheet(spreadsheet_id=spreadsheet_id)
