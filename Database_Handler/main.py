@@ -65,10 +65,15 @@ def submit_response():
 
         form_id = data['form_id']
         email = data['email']
+
+        # phone no may be optional
+        phone = data['phone']
         answers = data['answers']
 
         # Create a new response
-        response = Response(form_id=form_id, email=email)
+        response = Response(form_id=form_id, email=email,
+                            phone=phone)
+
         db.session.add(response)
         db.session.commit()
 

@@ -1,4 +1,4 @@
-DATABASE_URL="postgresql://postgres:atlan@database/database"
+DATABASE_URL="postgresql://postgres:atlan@database/postgres"
 LOGGER_URL="http://logger"
 DB_HANDLER_URL="http://db_handler"
 FORM_VALIDATION_URL="http://form_validation"
