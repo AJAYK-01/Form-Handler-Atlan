@@ -65,17 +65,19 @@ def get_logs():
     # Get the last n lines from the log file
     logs = []
     count = 0
-    for line in reversed(lines):
+    for line in lines[::-1]:
+        print("new", flush=True)
+        print(line, flush=True)
         if re.match(r'\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}', line):
             count += 1
             if count > entries:
                 break
-            logs.insert(0, line)
+            logs.append(line)
         else:
-            logs[0] += line
+            logs.append(line)
 
     # return logs entries as strings (new line already added)
-    return ''.join(logs)
+    return ''.join(reversed(logs))
 
 
 if __name__ == '__main__':
