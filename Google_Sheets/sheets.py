@@ -72,18 +72,18 @@ def create_sheet(title):
 def write_data(spreadsheet_id, sheet_name, data):
     """Write data to a Google Sheet."""
 
-    # Check if a sheet with the same name already exists and append version number if necessary
+    # Check if a sheet with the same name already exists and append copy number if necessary
     sheets_metadata = sheets_service.spreadsheets().get(
         spreadsheetId=spreadsheet_id).execute()
     sheets = sheets_metadata.get('sheets', '')
     sheet_names = [sheet.get("properties", {}).get("title", "")
                    for sheet in sheets]
 
-    version_number = 1
+    version_number = 2
     new_sheet_name = sheet_name
 
     while new_sheet_name in sheet_names:
-        new_sheet_name = f'{sheet_name} v{version_number}'
+        new_sheet_name = f'{sheet_name} {version_number}'
         version_number += 1
 
     body = {
@@ -151,8 +151,9 @@ def export_all():
                     .where(answer_table.c.response_id == response[0]))
                 answers = result.fetchall()
                 answer_dict = {row[0]: row[1] for row in answers}
-                response_row += [answer_dict.get(question[0], '')
-                                 for question in questions]
+
+                for _, values in answer_dict.items():
+                    response_row.append(values)
 
                 response_data.append(response_row)
 
@@ -241,8 +242,9 @@ def export_form():
 
             answers = result.fetchall()
             answer_dict = {row[0]: row[1] for row in answers}
-            response_row += [answer_dict.get(question[0], '')
-                             for question in questions]
+
+            for _, values in answer_dict.items():
+                response_row.append(values)
 
             response_data.append(response_row)
 
