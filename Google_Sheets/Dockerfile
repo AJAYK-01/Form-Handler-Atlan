@@ -17,4 +17,4 @@ EXPOSE 80
 RUN set -a; source .env; set +a
 
 # Run main.py when the container launches
-CMD ["python", "sheets.py"]
+CMD ["python", "main.py"]

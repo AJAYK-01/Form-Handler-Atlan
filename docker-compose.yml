@@ -84,8 +84,8 @@ services:
     x-develop:
       watch:
         - action: sync
-          path: ./Google_Sheets/sheets.py
-          target: /app/sheets.py
+          path: ./Google_Sheets/main.py
+          target: /app/main.py
         - action: rebuild
           path: ./Google_Sheets/requirements.txt
     depends_on:

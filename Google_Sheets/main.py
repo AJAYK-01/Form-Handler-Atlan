@@ -5,7 +5,7 @@ from googleapiclient.discovery import build
 from requests import Session
 import os
 
-from share import share_spreadsheet
+from Sheets_Service.interface import GoogleSheets
 
 app = Flask(__name__)
 
@@ -14,23 +14,16 @@ session = Session()
 session.headers.update({'X-Docker-Domain': 'google_sheets'})
 LOGGER_URL = os.environ.get('LOGGER_URL')
 
-# Google Sheets API creds
-SCOPES = ['https://www.googleapis.com/auth/spreadsheets',
-          'https://www.googleapis.com/auth/drive']
-SERVICE_ACCOUNT_FILE = 'google-sheets-service-key.json'
-
 
 # Replace this value with your own
 DATABASE_URL = os.environ.get('DATABASE_URL')
 
+# create Google Sheets instance
+sheets = GoogleSheets()
+
 # Connect to the database using a database URL
 engine = create_engine(DATABASE_URL)
 conn = engine.connect()
-
-# Set up the Google Sheets API client
-credentials = Credentials.from_service_account_file(
-    SERVICE_ACCOUNT_FILE, scopes=SCOPES)
-sheets_service = build('sheets', 'v4', credentials=credentials)
 
 
 # Define the database tables
@@ -57,54 +50,6 @@ answer_table = Table('answer', metadata,
                      )
 
 
-def create_sheet(title):
-    """Create a new Google Sheet and return its ID."""
-    spreadsheet = {
-        'properties': {
-            'title': title
-        }
-    }
-    spreadsheet = sheets_service.spreadsheets().create(
-        body=spreadsheet, fields='spreadsheetId').execute()
-    return spreadsheet.get('spreadsheetId')
-
-
-def write_data(spreadsheet_id, sheet_name, data):
-    """Write data to a Google Sheet."""
-
-    # Check if a sheet with the same name already exists and append copy number if necessary
-    sheets_metadata = sheets_service.spreadsheets().get(
-        spreadsheetId=spreadsheet_id).execute()
-    sheets = sheets_metadata.get('sheets', '')
-    sheet_names = [sheet.get("properties", {}).get("title", "")
-                   for sheet in sheets]
-
-    version_number = 2
-    new_sheet_name = sheet_name
-
-    while new_sheet_name in sheet_names:
-        new_sheet_name = f'{sheet_name} {version_number}'
-        version_number += 1
-
-    body = {
-        'requests': [{
-            'addSheet': {
-                'properties': {
-                    'title': new_sheet_name
-                }
-            }
-        }]
-    }
-    sheets_service.spreadsheets().batchUpdate(
-        spreadsheetId=spreadsheet_id, body=body).execute()
-    body = {
-        'values': data
-    }
-    range_ = f'{new_sheet_name}!A1'
-    sheets_service.spreadsheets().values().update(
-        spreadsheetId=spreadsheet_id, range=range_, valueInputOption='RAW', body=body).execute()
-
-
 @app.route('/export-all', methods=['POST'], strict_slashes=False)
 def export_all():
     """Export all forms and their associated data to Google Sheets."""
@@ -114,7 +59,8 @@ def export_all():
         email = req_body['email']
 
         # Create a new Google Sheet
-        spreadsheet_id = create_sheet(f'All Forms for {email}')
+        spreadsheet_id = sheets.create_sheet(
+            title=f'All Forms for {email}')
 
         # Query the database for all forms
         query = select(form_table.c.id, form_table.c.title)
@@ -157,20 +103,14 @@ def export_all():
 
                 response_data.append(response_row)
 
-            write_data(spreadsheet_id, form_title, response_data)
+            sheets.write_data(spreadsheet_id=spreadsheet_id,
+                              sheet_name=form_title, data=response_data)
 
         # Delete default "Sheet1"
-        body = {
-            'requests': [{
-                'deleteSheet': {
-                    'sheetId': 0
-                }
-            }]
-        }
-        sheets_service.spreadsheets().batchUpdate(
-            spreadsheetId=spreadsheet_id, body=body).execute()
+        sheets.delete_default_sheet(spreadsheet_id=spreadsheet_id)
 
-        res = share_spreadsheet(spreadsheet_id, email=email, creds=credentials)
+        res = sheets.share_spreadsheet(
+            spreadsheet_id=spreadsheet_id, email=email)
 
         # Log that all forms were exported
         log_data = {'message': f'Exported all forms for {email}'}
@@ -211,7 +151,7 @@ def export_form():
         form_title = row[0]
 
         # Create a new Google Sheet
-        spreadsheet_id = create_sheet(f'{form_title}')
+        spreadsheet_id = sheets.create_sheet(title=f'{form_title}')
 
         # Export question data
         result = conn.execute(
@@ -248,20 +188,14 @@ def export_form():
 
             response_data.append(response_row)
 
-        write_data(spreadsheet_id, form_title, response_data)
+        sheets.write_data(spreadsheet_id=spreadsheet_id,
+                          sheet_name=form_title, data=response_data)
 
         # Delete default "Sheet1"
-        body = {
-            'requests': [{
-                'deleteSheet': {
-                    'sheetId': 0
-                }
-            }]
-        }
-        sheets_service.spreadsheets().batchUpdate(
-            spreadsheetId=spreadsheet_id, body=body).execute()
+        sheets.delete_default_sheet(spreadsheet_id=spreadsheet_id)
 
-        res = share_spreadsheet(spreadsheet_id, email=email, creds=credentials)
+        res = sheets.share_spreadsheet(
+            spreadsheet_id=spreadsheet_id, email=email)
 
         # Log that a single form was exported
         log_data = {'message': f'Exported form with ID: {form_id}'}

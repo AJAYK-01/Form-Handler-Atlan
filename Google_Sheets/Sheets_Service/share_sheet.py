@@ -2,7 +2,7 @@ from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
 
-def share_spreadsheet(spreadsheet_id, email, creds):
+def impl_share_spreadsheet(spreadsheet_id, email, creds):
     ''' share the spreadsheet to client after export'''
 
     try:
