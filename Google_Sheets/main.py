@@ -22,7 +22,7 @@ DATABASE_URL = os.environ.get('DATABASE_URL')
 sheets = GoogleSheets()
 
 # Connect to the database using a database URL
-engine = create_engine(DATABASE_URL)
+engine = create_engine(DATABASE_URL, pool_pre_ping=True)
 conn = engine.connect()
 
 

@@ -77,6 +77,5 @@ This is how I used to design for any simple applications like personal projects,
 
 
 ## Some Credits
-- https://github.com/eficode/wait-for
 - Bing Chat
 - Twilio API for sms alerts

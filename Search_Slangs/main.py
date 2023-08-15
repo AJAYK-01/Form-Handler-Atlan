@@ -13,7 +13,7 @@ LOGGER_URL = os.environ.get('LOGGER_URL')
 
 # Database connection
 DATABASE_URL = os.environ.get('DATABASE_URL')
-engine = create_engine(DATABASE_URL)
+engine = create_engine(DATABASE_URL, pool_pre_ping=True)
 
 # Fetch slang words from txt file. Could be replaced with api or database in future
 slang_words = []

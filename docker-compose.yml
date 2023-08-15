@@ -1,5 +1,19 @@
 version: '3.8'
 services:
+  database:
+    image: postgres:15.3-alpine3.18
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: atlan
+      POSTGRES_DB: database
+    volumes:
+      - ./Database_Data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   api_gateway:
     build:
       context: ./API_Gateway
@@ -14,18 +28,10 @@ services:
         - action: rebuild
           path: ./API_Gateway/requirements.txt
     depends_on:
-      - database
+      database:
+        condition: service_healthy
     ports:
       - "5000:80"
-
-  database:
-    image: postgres:15.3-alpine3.18
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: atlan
-      POSTGRES_DB: database
-    volumes:
-      - ./Database_Data:/var/lib/postgresql/data
 
   db_handler:
     build:
@@ -41,7 +47,8 @@ services:
         - action: rebuild
           path: ./Database_Handler/requirements.txt
     depends_on:
-      - api_gateway
+      database:
+        condition: service_healthy
 
   form_validation:
     build:
@@ -57,7 +64,8 @@ services:
         - action: rebuild
           path: ./Form_Validation/requirements.txt
     depends_on:
-      - api_gateway
+      database:
+        condition: service_healthy
 
   search_slangs:
     build:
@@ -73,7 +81,8 @@ services:
         - action: rebuild
           path: ./Search_Slangs/requirements.txt
     depends_on:
-      - api_gateway
+      database:
+        condition: service_healthy
 
   google_sheets:
     build:
@@ -89,7 +98,8 @@ services:
         - action: rebuild
           path: ./Google_Sheets/requirements.txt
     depends_on:
-      - api_gateway
+      database:
+        condition: service_healthy
 
   sms_alert:
     build:
@@ -105,7 +115,8 @@ services:
         - action: rebuild
           path: ./SMS_Alert/requirements.txt
     depends_on:
-      - api_gateway
+      database:
+        condition: service_healthy
 
   logger:
     build:
