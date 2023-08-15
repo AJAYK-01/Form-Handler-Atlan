@@ -8,11 +8,15 @@
 docker-compose up
 ```
 
-- Api endpoints documentation can be found in [API_ENDPOINTS.md](API_ENDPOINTS.md).
-- Details about logging service can be found in [LOGGER.md](LOGGER.md).
+- Api endpoints documentation can be found in [http://127.0.0.1:5000/swagger](http://127.0.0.1:5000/swagger) and [API_ENDPOINTS.md](API_ENDPOINTS.md).
+- Details about logging service can be found in [http://127.0.0.1:5005/swagger](http://127.0.0.1:5005/swagger) and [LOGGER.md](LOGGER.md).
 - If Database data doesn't get stored on [Database_Data](Database_Data) folder, it is likely due to a folder permission issue which can be solved using:
 ```
 sudo chmod -R a+rwx,go-w ./Database_Data
+```
+- Similar issue may come for App logs, so run this: 
+```
+sudo chmod -R a+rwx,go-w ./Log_Service/logs/app.log
 ```
 - I have included all the **env variables** like google service account creds, twilio account creds for the sake of testing out. Will be deleting them in their respective dashboards in 2 weeks.
 

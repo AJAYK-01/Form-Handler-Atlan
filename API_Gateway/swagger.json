@@ -1,0 +1,347 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "API Gateway",
+        "version": "1.0.0",
+        "description": "API Gateway for managing forms and responses"
+    },
+    "servers": [
+        {
+            "url": "http://127.0.0.1:5000"
+        }
+    ],
+    "paths": {
+        "/create-form": {
+            "post": {
+                "summary": "Create a new form",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CreateFormRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Form created successfully",
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "message": "Form created successfully"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/get-form": {
+            "get": {
+                "summary": "Fetch a form by ID",
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "form_id",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Form retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "form": {
+                                        "created_at": "2023-08-14T10:46:20.507791",
+                                        "id": 2,
+                                        "questions": [
+                                            {
+                                                "id": 6,
+                                                "question_text": "What is your name?",
+                                                "question_type": "short_text"
+                                            },
+                                            {
+                                                "id": 7,
+                                                "question_text": "Where is your city?",
+                                                "question_type": "short_text"
+                                            },
+                                            {
+                                                "id": 8,
+                                                "question_text": "Describe your city in 200 words?",
+                                                "question_type": "long_text"
+                                            },
+                                            {
+                                                "id": 9,
+                                                "question_text": "What is your employment?",
+                                                "question_type": "short_text"
+                                            }
+                                        ],
+                                        "title": "Personal Information"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/submit-form": {
+            "post": {
+                "summary": "Submit a form response",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SubmitFormRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Response submitted successfully",
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "message": "Response submit successfully and sms sent"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/validate-response": {
+            "post": {
+                "summary": "Validate form responses",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ValidateResponseRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Validation successful",
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "valid": true
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Validation failed",
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "errors": [
+                                        "Validation failed for form 2"
+                                    ],
+                                    "valid": false
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/sheets-export": {
+            "post": {
+                "summary": "Export form data to Google Sheets",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SheetsExportRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Data exported to Google Sheets",
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "message": "Spreadsheet created & shared with jane@example.com, link: https://docs.google.com/spreadsheets/d/15BmwWLadLbcyN3asdasfjwqrbkjbkaf1p2NX5U8XkZQ8ENorS8"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/sheets-export-all": {
+            "post": {
+                "summary": "Export all form data to Google Sheets",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SheetsExportAllRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Data exported to Google Sheets",
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "message": "Spreadsheet created & shared with jane@example.com, link: https://docs.google.com/spreadsheets/d/1DXSNxncbjkajkfbakL-BAwLLafC2Pok_xkka2VAwYSo54I"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/search-slangs": {
+            "post": {
+                "summary": "Search for slangs in a response",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SearchSlangsRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Slangs found in response",
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "slangs": [
+                                        "dhinchak",
+                                        "jugaad"
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "CreateFormRequest": {
+                "type": "object",
+                "properties": {
+                    "title": {
+                        "type": "string"
+                    },
+                    "questions": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "question_text": {
+                                    "type": "string"
+                                },
+                                "question_type": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "SubmitFormRequest": {
+                "type": "object",
+                "properties": {
+                    "form_id": {
+                        "type": "integer"
+                    },
+                    "email": {
+                        "type": "string"
+                    },
+                    "phone": {
+                        "type": "string"
+                    },
+                    "answers": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "question_id": {
+                                    "type": "integer"
+                                },
+                                "answer_text": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "ValidateResponseRequest": {
+                "type": "object",
+                "properties": {
+                    "form_id": {
+                        "type": "integer"
+                    },
+                    "validation_query": {
+                        "type": "string"
+                    }
+                }
+            },
+            "SheetsExportRequest": {
+                "type": "object",
+                "properties": {
+                    "form_id": {
+                        "type": "integer"
+                    },
+                    "email": {
+                        "type": "string"
+                    }
+                }
+            },
+            "SheetsExportAllRequest": {
+                "type": "object",
+                "properties": {
+                    "email": {
+                        "type": "string"
+                    }
+                }
+            },
+            "SearchSlangsRequest": {
+                "type": "object",
+                "properties": {
+                    "form_id": {
+                        "type": "integer"
+                    },
+                    "text_question_id": {
+                        "type": "integer"
+                    },
+                    "city_question_id": {
+                        "type": "integer"
+                    },
+                    "city": {
+                        "type": "string"
+                    }
+                }
+            }
+        }
+    }
+}

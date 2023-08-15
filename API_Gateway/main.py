@@ -1,7 +1,10 @@
 from flask import Flask, request, jsonify
 import requests
 import os
+import json
 from requests import Session
+
+from flask_swagger_ui import get_swaggerui_blueprint
 
 app = Flask(__name__)
 
@@ -91,6 +94,27 @@ def search_slangs():
         f'{SEARCH_SLANGS_URL}', json=request.json, timeout=60)
 
     return response.text, response.status_code
+
+
+# Swagger documentation Endpoint
+@app.route('/swagger.json')
+def swagger_json():
+    with app.open_resource('swagger.json') as f:
+        swagger_data = json.load(f)
+    return jsonify(swagger_data)
+
+
+# Create a Swagger blueprint
+SWAGGER_URL = '/swagger'
+API_URL = '/swagger.json'
+swagger_blueprint = get_swaggerui_blueprint(
+    SWAGGER_URL,
+    API_URL,
+    config={
+        'app_name': "API Gateway"
+    }
+)
+app.register_blueprint(swagger_blueprint, url_prefix=SWAGGER_URL)
 
 
 if __name__ == '__main__':

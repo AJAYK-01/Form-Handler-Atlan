@@ -1,0 +1,42 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "Logger Service",
+        "version": "1.0.0",
+        "description": "Logger service for logging and retrieving log entries"
+    },
+    "servers": [
+        {
+            "url": "http://127.0.0.1:5005"
+        }
+    ],
+    "paths": {
+        "/": {
+            "get": {
+                "summary": "Retrieve log entries",
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "entries",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 10
+                        },
+                        "description": "Number of log entries to retrieve (default: 10)"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Log entries retrieved successfully",
+                        "content": {
+                            "text/plain": {
+                                "example": "2023-08-14 12:07:01 UTC - [INFO] - [sms_alert]: Sent SMS to +919876543211\n2023-08-14 12:14:39 UTC - [INFO] - [db_handler]: Request a form with ID: 2\n2023-08-14 12:15:52 UTC - [INFO] - [search_slangs]: Slang Search done\n2023-08-14 12:18:49 UTC - [INFO] - [db_handler]: Submitted new response with ID: 6\n2023-08-14 13:39:07 UTC - [ERROR] - [sms_alert]: HTTP 400 error: Unable to create record: The number  is unverified. Trial accounts cannot send messages to unverified numbers; verify  at twilio.com/user/account/phone-numbers/verified, or purchase a Twilio number to send messages to unverified numbers."
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

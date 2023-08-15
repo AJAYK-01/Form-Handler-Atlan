@@ -2,6 +2,9 @@ from flask import Flask, request, jsonify
 import logging
 import os
 import re
+import json
+
+from flask_swagger_ui import get_swaggerui_blueprint
 
 app = Flask(__name__)
 
@@ -76,6 +79,27 @@ def get_logs():
 
     # return logs entries as strings (new line already added)
     return ''.join(reversed(logs))
+
+
+# Swagger documentation Endpoint
+@app.route('/swagger.json')
+def swagger_json():
+    with app.open_resource('swagger.json') as f:
+        swagger_data = json.load(f)
+    return jsonify(swagger_data)
+
+
+# Create a Swagger blueprint
+SWAGGER_URL = '/swagger'
+API_URL = '/swagger.json'
+swagger_blueprint = get_swaggerui_blueprint(
+    SWAGGER_URL,
+    API_URL,
+    config={
+        'app_name': "Log Service"
+    }
+)
+app.register_blueprint(swagger_blueprint, url_prefix=SWAGGER_URL)
 
 
 if __name__ == '__main__':
